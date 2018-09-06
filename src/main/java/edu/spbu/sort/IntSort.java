@@ -9,10 +9,10 @@ import java.util.List;
  */
 public class IntSort {
   public static void sort (int array[]) {
-    Arrays.sort(array);
+    Sort.qSortArrays(array);
   }
 
   public static void sort (List<Integer> list) {
-    Collections.sort(list);
+    Sort.qSortList(list);
   }
 }
