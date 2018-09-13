@@ -13,15 +13,26 @@ public class Sort {
         int j = ri;
         int m = array[(i + j) / 2];
         do {
-            while (array[i] < m) i++;
-            while (array[j] > m) j--;
+            while (array[i] < m) {
+                i++;
+            }
+            while (array[j] > m) {
+                j--;
+            }
             if (i<=j) {
-                int x = array[i]; array[i] = array[j]; array[j] = x;
-                i++; j--;
+                int x = array[i];
+                array[i] = array[j];
+                array[j] = x;
+                i++;
+                j--;
             }
         } while (i<=j);
-        if (li < j) qSortArrays(array,li,j);
-        if (i < ri) qSortArrays(array,i,ri);
+        if (li < j) {
+            qSortArrays(array,li,j);
+        }
+        if (i < ri) {
+            qSortArrays(array,i,ri);
+        }
     }
 
     public static void qSortList (List<Integer> list){
@@ -33,14 +44,25 @@ public class Sort {
         int j = ri;
         int m = list.get((i + j) / 2);
         do {
-            while (list.get(i) < m) i++;
-            while (list.get(j) > m) j--;
+            while (list.get(i) < m) {
+                i++;
+            }
+            while (list.get(j) > m) {
+                j--;
+            }
             if (i<=j) {
-                int x = list.get(i); list.set(i,list.get(j)); list.set(j,x);
-                i++; j--;
+                int x = list.get(i);
+                list.set(i,list.get(j));
+                list.set(j,x);
+                i++;
+                j--;
             }
         } while (i<=j);
-        if (li < j) qSortList(list,li,j);
-        if (i < ri) qSortList(list,i,ri);
+        if (li < j) {
+            qSortList(list,li,j);
+        }
+        if (i < ri) {
+            qSortList(list,i,ri);
+        }
     }
 }
