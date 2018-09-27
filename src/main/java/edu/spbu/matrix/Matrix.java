@@ -19,6 +19,4 @@ public interface Matrix
    * @return
    */
   Matrix dmul(Matrix o);
-
-  boolean equals(Matrix o);
 }

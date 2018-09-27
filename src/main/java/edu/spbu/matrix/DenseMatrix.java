@@ -18,6 +18,12 @@ public class DenseMatrix implements Matrix {
     this.height = 0;
   }
 
+  public DenseMatrix(int matrix[][], int height, int width){
+    this.matrix = matrix;
+    this.width = height;
+    this.height = width;
+  }
+
   /**
    * загружает матрицу из файла
    * @param fileName
@@ -79,7 +85,7 @@ public class DenseMatrix implements Matrix {
             chWidth = j;
           }
 
-          /**
+          /*
            * Неккоректный размер строки
            */
           if ((j != width) && (j != 0)){
@@ -96,7 +102,11 @@ public class DenseMatrix implements Matrix {
         }
 
       }
-      height = i + 1;
+      if (j == 0) {
+        height = i;
+      } else {
+        height = i + 1;
+      }
       reader.close();
 
       int[][] newmatrix = new int[height][width];
@@ -127,10 +137,7 @@ public class DenseMatrix implements Matrix {
       if (obj.width == this.height){
         obj = obj.trans(); //Ссылка на прошлый obj пропадает
 
-        DenseMatrix res = new DenseMatrix();
-        res.height = this.height;
-        res.width = obj.height;
-        res.matrix = new int[res.height][res.width];
+        DenseMatrix res = new DenseMatrix(new int[this.height][obj.height], this.height, obj.height);
         for (int i = 0; i < this.height; i++) {
           for (int j = 0; j < obj.height; j++) {
             int sum = 0;
@@ -165,10 +172,7 @@ public class DenseMatrix implements Matrix {
   }
 
   public DenseMatrix trans() {
-    DenseMatrix tr = new DenseMatrix();
-    tr.height = this.width;
-    tr.width = this.height;
-    tr.matrix = new int[this.width][this.height];
+    DenseMatrix tr = new DenseMatrix(new int[this.width][this.height], this.width, this.height);
     for (int i = 0; i < this.height; i++) {
       for (int j = 0; j < this.width; j++) {
         tr.matrix[j][i] = this.matrix[i][j];
@@ -182,7 +186,7 @@ public class DenseMatrix implements Matrix {
    * @param o
    * @return
    */
-  @Override public boolean equals(Matrix o) {
+  @Override public boolean equals(Object o) {
 
     boolean flag = true;
 

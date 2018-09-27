@@ -35,11 +35,6 @@ public class SparseMatrix implements Matrix
     return null;
   }
 
-  @Override
-  public boolean equals(Matrix o) {
-    return false;
-  }
-
   /**
    * спавнивает с обоими вариантами
    * @param o
