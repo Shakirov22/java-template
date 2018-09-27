@@ -20,4 +20,5 @@ public interface Matrix
    */
   Matrix dmul(Matrix o);
 
+  boolean equals(Matrix o);
 }

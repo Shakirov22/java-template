@@ -54,8 +54,7 @@ public class Sort {
                 int x = list.get(i);
                 list.set(i,list.get(j));
                 list.set(j,x);
-                i++;
-                j--;
+                i++; j--;
             }
         } while (i<=j);
         if (li < j) {
