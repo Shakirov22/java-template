@@ -7,9 +7,9 @@ import java.io.*;
  */
 public class DenseMatrix implements Matrix {
 
-  private int matrix[][];
-  private int width;
-  private int height;
+  protected int matrix[][];
+  protected int width;
+  protected int height;
 
 
   public DenseMatrix() {
@@ -18,10 +18,10 @@ public class DenseMatrix implements Matrix {
     this.height = 0;
   }
 
-  public DenseMatrix(int matrix[][], int height, int width){
-    this.matrix = matrix;
-    this.width = height;
-    this.height = width;
+  public DenseMatrix(int height, int width){
+    this.matrix = new int[height][width];
+    this.width = width;
+    this.height = height;
   }
 
   /**
@@ -59,20 +59,20 @@ public class DenseMatrix implements Matrix {
               change = true;
             }
             if (change){
-              int[][] newmatrix = new int[height][width];
+              int[][] newMatrix = new int[height][width];
               for (int indexH = 0; indexH < chHeight; indexH++){
                 for (int indexW = 0; indexW < chWidth; indexW++){
-                  newmatrix[indexH][indexW] = matrix[indexH][indexW];
+                  newMatrix[indexH][indexW] = matrix[indexH][indexW];
                 }
               }
-              matrix = newmatrix;
+              matrix = newMatrix;
               chWidth = width;
               chHeight = height;
             }
 
             matrix[i][j] = Integer.valueOf(elem);
           }catch (NumberFormatException e) {
-            System.err.println(e.getMessage());
+            System.out.println(e.getMessage());
           }
           elem = "";
           j += 1;
@@ -92,8 +92,11 @@ public class DenseMatrix implements Matrix {
             System.out.println("Matrix size error in file: " + fileName);
             System.exit(0);
           }
-          i += 1;
-          j = 0;
+
+          if (j != 0){
+            i += 1;
+            j = 0;
+          }
         }
 
 
@@ -102,12 +105,16 @@ public class DenseMatrix implements Matrix {
         }
 
       }
+
+
+
       if (j == 0) {
         height = i;
       } else {
         height = i + 1;
       }
       reader.close();
+
 
       int[][] newmatrix = new int[height][width];
       for (int indexH = 0; indexH < height; indexH++){
@@ -120,6 +127,17 @@ public class DenseMatrix implements Matrix {
     }catch(IOException e){
       System.out.println(e.getMessage());
     }
+  }
+
+
+  protected DenseMatrix trans() {
+    DenseMatrix tr = new DenseMatrix(this.width, this.height);
+    for (int i = 0; i < this.height; i++) {
+      for (int j = 0; j < this.width; j++) {
+        tr.matrix[j][i] = this.matrix[i][j];
+      }
+    }
+    return tr;
   }
 
   /**
@@ -137,7 +155,7 @@ public class DenseMatrix implements Matrix {
       if (obj.width == this.height){
         obj = obj.trans(); //Ссылка на прошлый obj пропадает
 
-        DenseMatrix res = new DenseMatrix(new int[this.height][obj.height], this.height, obj.height);
+        DenseMatrix res = new DenseMatrix(this.height, obj.height);
         for (int i = 0; i < this.height; i++) {
           for (int j = 0; j < obj.height; j++) {
             int sum = 0;
@@ -156,7 +174,51 @@ public class DenseMatrix implements Matrix {
       }
     }
     else{
-      return null;
+      SparseMatrix mn2 = new SparseMatrix();
+      if (o.getClass() == mn2.getClass()) {
+        DenseMatrix mn1 = this;
+        mn2 = (SparseMatrix)o;
+        mn2 = mn2.trans();
+
+
+        if (mn1.width == mn2.width) {
+          DenseMatrix res = new DenseMatrix(mn1.height, mn2.height);
+
+          int k = 0;
+          int k1 = 0;
+          int i1 = 0;
+
+          for (int i = 0; i < res.height; i++){
+            for (int j = 0; j < res.width; j++) {
+              res.matrix[i][j] = 0;
+            }
+          }
+
+          while (mn2.points[i1] != mn2.amount) {
+            while ((mn2.points[i1] == mn2.points[i1 + 1]) && (mn2.points[i1] != mn2.amount)){
+              i1 += 1;
+            }
+            if (mn2.points[i1] == mn2.amount) break;
+            for (int i = 0; i < mn1.height; i++){
+              int sum = 0;
+              for (k1 = mn2.points[i1]; k1 < mn2.points[i1 + 1]; k1++) {
+                sum += mn2.matrix[k1] * mn1.matrix[i][mn2.colons[k1]];
+              }
+
+              if (sum != 0) {
+                res.matrix[i][i1] = sum;
+              }
+            }
+            i1 += 1;
+          }
+
+          return res;
+        } else {
+          return  null;
+        }
+      } else {
+        return null;
+      }
     }
   }
 
@@ -166,19 +228,8 @@ public class DenseMatrix implements Matrix {
    * @param o
    * @return
    */
-  @Override public Matrix dmul(Matrix o)
-  {
+  @Override public Matrix dmul(Matrix o) {
     return null;
-  }
-
-  public DenseMatrix trans() {
-    DenseMatrix tr = new DenseMatrix(new int[this.width][this.height], this.width, this.height);
-    for (int i = 0; i < this.height; i++) {
-      for (int j = 0; j < this.width; j++) {
-        tr.matrix[j][i] = this.matrix[i][j];
-      }
-    }
-    return tr;
   }
 
   /**
