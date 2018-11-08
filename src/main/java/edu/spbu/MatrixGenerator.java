@@ -11,7 +11,7 @@ public class MatrixGenerator
 {
   public static final int SEED1 = 1;
   public static final int SEED2 = 2;
-  public static final int EMPTY_ROW_FRACTION = 10;
+  public static final int EMPTY_ROW_FRACTION = 2;
 
   public static final String MATRIX1_NAME = "m1.txt";
   public static final String MATRIX2_NAME = "m2.txt";

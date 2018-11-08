@@ -129,6 +129,20 @@ public class DenseMatrix implements Matrix {
     }
   }
 
+  /*
+   * Функция для много поточного перемножения
+   */
+  public void mulMatrixThread(DenseMatrix obj, DenseMatrix result, int firstRow, int lastRow){
+    for (int i = firstRow; i < lastRow; i++){
+      for (int j = 0; j < obj.height; j++) {
+        int sum = 0;
+        for (int s = 0; s < obj.width; s++){
+          sum += this.matrix[i][s]*obj.matrix[j][s];
+        }
+        result.matrix[i][j] = sum;
+      }
+    }
+  }
 
   protected DenseMatrix trans() {
     DenseMatrix tr = new DenseMatrix(this.width, this.height);
@@ -147,7 +161,8 @@ public class DenseMatrix implements Matrix {
    * @param o
    * @return
    */
-  @Override public Matrix mul(Matrix o) {
+  @Override
+  public Matrix mul(Matrix o) {
 
     if (o.getClass() == this.getClass()){
       DenseMatrix obj = (DenseMatrix)o;
@@ -228,8 +243,44 @@ public class DenseMatrix implements Matrix {
    * @param o
    * @return
    */
-  @Override public Matrix dmul(Matrix o) {
-    return null;
+  @Override
+  public Matrix dmul(Matrix o) {
+    final int COUNT_THREADS = 8;
+
+    if (o.getClass() == this.getClass()){
+      DenseMatrix mn1 = this;
+      DenseMatrix mn2 = (DenseMatrix)o;
+      mn2 = mn2.trans();
+      if (mn1.width == mn2.width) {
+        DenseMatrix res = new DenseMatrix(mn1.height, mn2.height);
+        int firstRow = 0;
+        DDMulMatrixThread mulThreads[] = new DDMulMatrixThread[COUNT_THREADS];
+        for (int index = 0; index < COUNT_THREADS; index++){
+          int lastRow = firstRow + mn1.height / COUNT_THREADS;
+          if (index < mn1.height % COUNT_THREADS) {++lastRow;}
+          mulThreads[index] = new DDMulMatrixThread(mn1, mn2, res, firstRow, lastRow);
+          mulThreads[index].start();
+          firstRow = lastRow;
+        }
+
+        try {
+          for (final DDMulMatrixThread mulThread : mulThreads)
+            mulThread.join();
+        }
+        catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+
+        return res;
+      }
+      else{
+          System.out.println("Неправильные размеры перемножаемых матриц");
+          return null;
+      }
+    }
+    else{
+      return null;
+    }
   }
 
   /**
@@ -237,7 +288,8 @@ public class DenseMatrix implements Matrix {
    * @param o
    * @return
    */
-  @Override public boolean equals(Object o) {
+  @Override
+  public boolean equals(Object o) {
 
     boolean flag = true;
 

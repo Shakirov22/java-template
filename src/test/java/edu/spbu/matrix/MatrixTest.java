@@ -22,6 +22,9 @@ public class MatrixTest
     Matrix m1 = new SparseMatrix("m1.txt");
     Matrix m2 = new SparseMatrix("m2.txt");
     Matrix expected = new SparseMatrix("result.txt");
+    long start = System.currentTimeMillis();
+    Matrix res = m1.dmul(m2);
+    System.out.println("mulSS time: " +(System.currentTimeMillis() - start));
     assertEquals(expected, m1.mul(m2));
   }
 
@@ -39,5 +42,24 @@ public class MatrixTest
     Matrix m2 = new SparseMatrix("m2.txt");
     Matrix expected = new DenseMatrix("result.txt");
     assertEquals(expected, m1.mul(m2));
+  }
+
+  @Test
+  public void dmulDD() {
+    Matrix m1 = new DenseMatrix("m1.txt");
+    Matrix m2 = new DenseMatrix("m2.txt");
+    Matrix expected = new DenseMatrix("result.txt");
+    assertEquals(expected, m1.dmul(m2));
+  }
+
+  @Test
+  public void dmulSS() {
+    Matrix m1 = new SparseMatrix("m1.txt");
+    Matrix m2 = new SparseMatrix("m2.txt");
+    Matrix expected = new SparseMatrix("result.txt");
+    long start = System.currentTimeMillis();
+    Matrix res = m1.dmul(m2);
+    System.out.println("dmulSS time: " +(System.currentTimeMillis() - start));
+    assertEquals(m1.mul(m2), res);
   }
 }

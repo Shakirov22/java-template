@@ -36,6 +36,22 @@ public class SparseMatrix implements Matrix
     this.amount = amount;
   }
 
+  private void addElement(int elem, int colon, int pos){
+    if (pos >= this.amount) {
+      this.amount = this.amount * 3 / 2 + 1;
+      int[] newMatrix = new int[this.amount];
+      int[] newColons = new int[this.amount];
+      for (int index = 0; index < pos; index++) {
+        newMatrix[index] = this.matrix[index];
+        newColons[index] = this.colons[index];
+      }
+      this.matrix = newMatrix;
+      this.colons = newColons;
+    }
+    this.matrix[pos] = elem;
+    this.colons[pos] = colon;
+  }
+
   /**
    * загружает матрицу из файла
    * @param fileName
@@ -160,6 +176,49 @@ public class SparseMatrix implements Matrix
     }
   }
 
+  public void mulMatrixThread (SparseMatrix obj, SparseMatrix result, int row){
+    int i2 =0;
+    int k = 0;
+    while (obj.points[i2] != obj.amount){
+      while ((obj.points[i2] == obj.points[i2 + 1]) && (obj.points[i2] != obj.amount)){
+        i2 += 1;
+      }
+      if (obj.points[i2] == obj.amount) break;
+
+      int sum = 0;
+      int k1 = this.points[row];
+      int k2 = obj.points[i2];
+      while ((k1 < this.points[row + 1]) && (k2 < obj.points[i2 + 1])){
+        if (this.colons[k1] == obj.colons[k2]) {
+          sum += this.matrix[k1] * obj.matrix[k2];
+          k1 += 1;
+          k2 += 1;
+        } else {
+          if (this.colons[k1] > obj.colons[k2]) {
+            k2 += 1;
+          }else {
+            k1 += 1;
+          }
+        }
+      }
+
+      if (sum != 0) {
+        result.matrix[k] = sum;
+        result.colons[k] = i2;
+        k += 1;
+      }
+      i2 += 1;
+    }
+    int mM[] = new int[k];
+    int cM[] = new int[k];
+    for (int i = 0; i < k; i++){
+      mM[i] = result.matrix[i];
+      cM[i] = result.colons[i];
+    }
+    result.matrix = mM;
+    result.colons = cM;
+  }
+
   protected SparseMatrix trans() {
     SparseMatrix tr = new SparseMatrix(this.width, this.height, this.amount);
 
@@ -213,15 +272,16 @@ public class SparseMatrix implements Matrix
    * @param o
    * @return
    */
-  @Override public Matrix mul(Matrix o) {
+  @Override
+  public Matrix mul(Matrix o) {
 
     if (o.getClass() == this.getClass()) {
       SparseMatrix mn1 = this;
       SparseMatrix mn2 = (SparseMatrix) o;
       mn2 = mn2.trans();
 
-      if (mn1.width == this.height){
-        SparseMatrix res = new SparseMatrix(mn1.height, mn2.width,  mn1.amount);
+      if (mn1.width == mn2.height){
+        SparseMatrix res = new SparseMatrix(mn1.height, mn2.height,  mn1.amount);
 
         int k = 0;
         int k1 = 0;
@@ -268,21 +328,7 @@ public class SparseMatrix implements Matrix
             }
 
             if (sum != 0) {
-              if (k >= res.amount) {
-                res.amount = res.amount * 3 / 2 + 1;
-
-                int[] newMatrix = new int[res.amount];
-                int[] newColons = new int[res.amount];
-                for (int index = 0; index < k; index++){
-                  newMatrix[index] = res.matrix[index];
-                  newColons[index] = res.colons[index];
-                }
-                res.matrix = newMatrix;
-                res.colons = newColons;
-              }
-
-              res.matrix[k] = sum;
-              res.colons[k] = i2;
+              res.addElement(sum, i2, k);
               k += 1;
             }
             i2 += 1;
@@ -318,8 +364,8 @@ public class SparseMatrix implements Matrix
         mn2 = (DenseMatrix)o;
         mn2 = mn2.trans();
 
-        if (mn1.width == mn2.width) {
-          SparseMatrix res = new SparseMatrix(mn1.height, mn2.width, mn1.amount);
+        if (mn1.width == mn2.height) {
+          SparseMatrix res = new SparseMatrix(mn1.height, mn2.height, mn1.amount);
           int k = 0;
           int k1 = 0;
           int i1 = 0;
@@ -337,19 +383,7 @@ public class SparseMatrix implements Matrix
               }
 
               if (sum != 0) {
-                if (k >= res.amount) {
-                  res.amount = res.amount * 3 / 2 + 1;
-                  int[] newMatrix = new int[res.amount];
-                  int[] newColons = new int[res.amount];
-                  for (int index = 0; index < k; index++) {
-                    newMatrix[index] = res.matrix[index];
-                    newColons[index] = res.colons[index];
-                  }
-                  res.matrix = newMatrix;
-                  res.colons = newColons;
-                }
-                res.matrix[k] = sum;
-                res.colons[k] = i;
+                res.addElement(sum, i, k);
                 k += 1;
               }
             }
@@ -389,8 +423,89 @@ public class SparseMatrix implements Matrix
    * @param o
    * @return
    */
-  @Override public Matrix dmul(Matrix o) {
-    return null;
+  @Override
+  public Matrix dmul(Matrix o) {
+    final int COUNT_THREADS = 8;
+
+    if (o.getClass() == this.getClass()){
+      SparseMatrix mn1 = this;
+      SparseMatrix mn2 = (SparseMatrix) o;
+      mn2 = mn2.trans();
+      if (mn1.width == mn2.height) {
+        int resultMatrix[][] = new int[mn1.height][];
+        int resultColons[][] = new int[mn1.height][];
+        SSMulMatrixThread mulThreads[] = new SSMulMatrixThread[COUNT_THREADS];
+        SparseMatrix result[] = new SparseMatrix[COUNT_THREADS];
+        int threadIndexToRow[] = new int[COUNT_THREADS];
+        for (int tITR = 0; tITR < COUNT_THREADS; tITR++) threadIndexToRow[tITR] = -1;
+
+        int k = 0;
+        int i1 = 0;
+        int threadIndex = 0;
+
+        while (mn1.points[i1] != mn1.amount) {
+          while ((mn1.points[i1] == mn1.points[i1 + 1]) && (mn1.points[i1] != mn1.amount)){
+            i1 += 1;
+          }
+          if (mn1.points[i1] == mn1.amount) break;
+
+          for (; mulThreads[threadIndex] != null; threadIndex = (threadIndex + 1) % COUNT_THREADS) {
+            if (!mulThreads[threadIndex].isAlive()) break;
+          }
+          if (threadIndexToRow[threadIndex] != -1) {
+            resultMatrix[threadIndexToRow[threadIndex]] = result[threadIndex].matrix;
+            resultColons[threadIndexToRow[threadIndex]] = result[threadIndex].colons;
+            k += resultColons[threadIndexToRow[threadIndex]].length;
+          }
+          result[threadIndex] = new SparseMatrix(mn1.height, mn2.height, mn2.height);
+          mulThreads[threadIndex] = new SSMulMatrixThread(mn1, mn2, result[threadIndex], i1);
+          mulThreads[threadIndex].start();
+          threadIndexToRow[threadIndex] = i1;
+          threadIndex = (threadIndex + 1) % COUNT_THREADS;
+
+          i1 += 1;
+        }
+
+        try {
+          for (SSMulMatrixThread mulThread : mulThreads)
+            mulThread.join();
+        }
+        catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+
+        for (int i = 0; i < COUNT_THREADS; i++) {
+          if (threadIndexToRow[i] != -1) {
+            resultMatrix[threadIndexToRow[i]] = result[i].matrix;
+            resultColons[threadIndexToRow[i]] = result[i].colons;
+            k += resultColons[threadIndexToRow[i]].length;
+          }
+        }
+
+        SparseMatrix res = new SparseMatrix(mn1.height, mn2.height, k);
+
+        int l = 0;
+        for (int index = 0; index < mn1.height; index++) {
+          res.points[index] = l;
+          if (resultMatrix[index] != null) {
+            for (int j = 0; j < resultMatrix[index].length; j++){
+              res.matrix[l] = resultMatrix[index][j];
+              res.colons[l] = resultColons[index][j];
+              l++;
+            }
+          }
+        }
+
+        return res;
+      }
+      else{
+        System.out.println("Неправильные размеры перемножаемых матриц");
+        return null;
+      }
+    }
+    else{
+      return null;
+    }
   }
 
   /**
@@ -398,7 +513,8 @@ public class SparseMatrix implements Matrix
    * @param o
    * @return
    */
-  @Override public boolean equals(Object o) {
+  @Override
+  public boolean equals(Object o) {
     boolean flag = true;
 
     if (o.getClass() == this.getClass()){
